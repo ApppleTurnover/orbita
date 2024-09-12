@@ -16,27 +16,45 @@ class UserNotification
     private ?Carbon $sentAt;
 
     public function __construct(
-        string $id,
         int $userId,
         int $topicId,
         string $type,
-        bool $active = true,
-        bool $sent = false,
-        ?Carbon $sentAt = null
+        ?int $commentId = null
     ) {
-        $this->id = $id;
+        $this->id = uniqid(); // Генерация уникального ID
         $this->userId = $userId;
         $this->topicId = $topicId;
         $this->type = $type;
-        $this->active = $active;
-        $this->sent = $sent;
-        $this->createdAt = new Carbon();
-        $this->sentAt = $sentAt;
+        $this->commentId = $commentId;
+        $this->active = true;
+        $this->sent = false;
+        $this->createdAt = Carbon::now();
+        $this->sentAt = null;
     }
 
     public function markAsSent(): void
     {
         $this->sent = true;
         $this->sentAt = Carbon::now();
+    }
+
+    public function deactivate(): void
+    {
+        $this->active = false;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function isSent(): bool
+    {
+        return $this->sent;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
     }
 }

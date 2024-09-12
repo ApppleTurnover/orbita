@@ -1,4 +1,5 @@
 <?php
+namespace App\Domain\Setting\Entities;
 
 class Setting
 {
@@ -23,5 +24,30 @@ class Setting
             throw new \InvalidArgumentException('This setting is required and cannot be null.');
         }
         $this->value = $newValue;
+    }
+
+    public function getKey(): string
+    {
+        return $this->key;
+    }
+
+    public function getValue(): ?string
+    {
+        return $this->value;
+    }
+
+    public function isRequired(): bool
+    {
+        return $this->required;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function getRank(): int
+    {
+        return $this->rank;
     }
 }

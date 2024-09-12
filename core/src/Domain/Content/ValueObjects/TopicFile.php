@@ -1,16 +1,23 @@
 <?php
 namespace App\Domain\Content\ValueObjects;
 
+use App\Domain\Content\Entities\Topic;
+use App\Domain\File\Entities\File;
+use App\Domain\User\Entities\User;
+
 class TopicFile
 {
-    private int $topicId;
-    private int $fileId;
-    private string $type;
+    private Topic $topic;
+    private File $file;
 
-    public function __construct(int $topicId, int $fileId, string $type)
+    public function __construct(Topic $topic, File $file)
     {
-        $this->topicId = $topicId;
-        $this->fileId = $fileId;
-        $this->type = $type;
+        $this->topic = $topic;
+        $this->file = $file;
+    }
+
+    public function hasAccess(User $user): bool
+    {
+        return $this->topic->hasAccess($user);
     }
 }

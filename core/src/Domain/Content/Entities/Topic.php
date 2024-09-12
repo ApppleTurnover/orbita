@@ -49,6 +49,9 @@ class Topic
         $this->teaser = $teaser;
         $this->createdAt = Carbon::now();
         $this->updatedAt = Carbon::now();
+        $this->viewsCount = 0;
+        $this->commentsCount = 0;
+        $this->reactionsCount = 0;
     }
 
     public function activate(): void
@@ -69,21 +72,16 @@ class Topic
         $this->updatedAt = Carbon::now();
     }
 
-    public function hasAccess(User $user): bool
+    public function open(): void
     {
-        if ($this->isFree()) {
-            return true;
-        }
+        $this->closed = false;
+        $this->updatedAt = Carbon::now();
+    }
 
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        if ($this->levelId && $user->hasSubscription($this->levelId)) {
-            return true;
-        }
-
-        return false;
+    public function updateContent(array $newContent): void
+    {
+        $this->content = $newContent;
+        $this->updatedAt = Carbon::now();
     }
 
     public function isFree(): bool
@@ -94,6 +92,18 @@ class Topic
     public function incrementViews(): void
     {
         $this->viewsCount++;
+        $this->updatedAt = Carbon::now();
+    }
+
+    public function incrementCommentsCount(): void
+    {
+        $this->commentsCount++;
+        $this->updatedAt = Carbon::now();
+    }
+
+    public function incrementReactionsCount(): void
+    {
+        $this->reactionsCount++;
         $this->updatedAt = Carbon::now();
     }
 
@@ -109,11 +119,23 @@ class Topic
     public function createNotifications(array $users): void
     {
         foreach ($users as $user) {
-            if (!$user->wantsNotification()) {
-                continue;
+            if ($user->wantsNotification()) {
+                $user->notify('topic-new', $this->id);
             }
-
-            $user->notify('topic-new', $this->id);
         }
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->closed;
+    }
+
+    public function hasAccess(User $user)
+    {
     }
 }

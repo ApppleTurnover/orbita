@@ -2,9 +2,12 @@
 
 namespace App\Controllers;
 
-use App\Models\File;
-use App\Models\TopicFile;
+use App\Domain\Content\ValueObjects\TopicFile;
 use App\Models\Video as VideoFile;
+use App\Domain\Content\Entities\Video as VideoEntity;
+use App\Domain\Content\Entities\Topic as TopicEntity;
+use App\Domain\Content\ValueObjects\PageFile as PageFileVO;
+use App\Domain\File\Entities\File as FileEntity;
 use App\Models\VideoQuality;
 use App\Services\Log;
 use App\Services\Redis;
@@ -17,7 +20,7 @@ use Vesp\Controllers\Controller;
 
 class Video extends Controller
 {
-    protected ?VideoFile $video = null;
+    protected ?VideoEntity $video = null;
     protected VideoCache $cache;
     protected Redis $redis;
 
@@ -40,39 +43,42 @@ class Video extends Controller
     protected function loadFile(): ?ResponseInterface
     {
         $uuid = $this->getProperty('uuid');
-        if (!$this->video = VideoFile::query()->find($uuid)) {
+        if (!$videoModel = VideoFile::query()->find($uuid)) {
             return $this->failure('Not Found', 404);
         }
+
+        $this->video = new VideoEntity(
+            $videoModel->id,
+            $videoModel->title,
+            $videoModel->description,
+            $videoModel->duration,
+            $videoModel->active,
+            $videoModel->pageFiles->map(fn($pageFile) => new PageFileVO($pageFile->file, $pageFile))->toArray(),
+            $videoModel->topicFiles->map(fn($topicFile) => new TopicFile(
+                new TopicEntity($topicFile->topic->uuid, $topicFile->topic->title, $topicFile->topic->content, $topicFile->topic->user_id),
+                new FileEntity($topicFile->file)
+            ))->toArray()
+        );
 
         $cacheTTL = (int)getenv('CACHE_MEDIA_ACCESS_TIME') ?: 3600;
         $key = implode(':', ['video', $uuid, $this->user?->id ?: 'null']);
 
         $allow = $this->redis->get($key);
-        if ($allow === null) {
-            // Check permissions
-            $isAdmin = $this->user && $this->user->hasScope('videos/patch');
-            if (!$isAdmin && !$this->video->active) {
-                return $this->failure('Not Found', 404);
-            }
-
-            $allow = $isAdmin || $this->video->pageFiles()->where('type', 'video')->count();
-            if (!$allow) {
-                $topicFiles = $this->video->topicFiles()->where('type', 'video');
-                /** @var TopicFile $topicFile */
-                foreach ($topicFiles->cursor() as $topicFile) {
-                    if ($topicFile->topic->hasAccess($this->user)) {
-                        $allow = true;
-                        break;
-                    }
-                }
-            }
-            $this->redis->set($key, $allow, 'EX', $cacheTTL);
-        }
-        if (!$allow) {
-            return $this->failure('Access Denied', 403);
+        if ($allow !== null) {
+            return $allow ? null : $this->failure('Access Denied', 403);
         }
 
-        return null;
+        $isAdmin = $this->user && $this->user->hasScope('videos/patch');
+        if (!$isAdmin && !$this->video->isActive()) {
+            return $this->failure('Not Found', 404);
+        }
+
+        $allow = $isAdmin || $this->video->hasPageFiles('video');
+        if (!$allow && $this->video->hasTopicFilesWithAccess('video', $this->user)) {
+            $allow = true;
+        }
+        $this->redis->set($key, $allow, 'EX', $cacheTTL);
+        return $allow ? null : $this->failure('Access Denied', 403);
     }
 
     public function get(): ResponseInterface

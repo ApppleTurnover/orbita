@@ -1,21 +1,17 @@
 <?php
 namespace App\Domain\Content\ValueObjects;
 
+use App\Domain\Content\Entities\Page;
+use App\Domain\File\Entities\File;
+
 class PageFile
 {
-    private int $pageId;
-    private int $fileId;
-    private string $type;
+    private Page $page;
+    private File $file;
 
-    public function __construct(int $pageId, int $fileId, string $type)
+    public function __construct(Page $page, File $file)
     {
-        $this->pageId = $pageId;
-        $this->fileId = $fileId;
-        $this->type = $type;
-    }
-
-    public function getFileType(): string
-    {
-        return $this->type;
+        $this->page = $page;
+        $this->file = $file;
     }
 }

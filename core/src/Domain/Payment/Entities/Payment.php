@@ -1,7 +1,7 @@
 <?php
 namespace App\Domain\Payment\Entities;
 
-use App\Domain\Entities\PaymentService;
+use App\Services\PaymentService;
 use Carbon\Carbon;
 
 class Payment
@@ -15,6 +15,8 @@ class Payment
     private ?bool $paid;
     private ?Carbon $paidAt;
     private array $metadata;
+    private string $remoteId;
+    private string $link;
 
     public function __construct(
         string $id,
@@ -47,6 +49,7 @@ class Payment
     public function markAsUnpaid(): void
     {
         $this->paid = false;
+        $this->paidAt = null;
     }
 
     public function checkStatus(PaymentService $paymentService): bool
@@ -61,8 +64,56 @@ class Payment
         return $this->paid;
     }
 
-    public function getLink(PaymentService $paymentService): ?string
+    public function getId(): string
     {
-        return $paymentService->makePayment($this);
+        return $this->id;
+    }
+
+    public function getUserId(): int
+    {
+        return $this->userId;
+    }
+
+    public function getSubscriptionId(): ?int
+    {
+        return $this->subscriptionId;
+    }
+
+    public function getTopicId(): ?int
+    {
+        return $this->topicId;
+    }
+
+    public function getAmount(): float
+    {
+        return $this->amount;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->paid;
+    }
+
+    public function getMetadata(): array
+    {
+        return $this->metadata;
+    }
+
+    public function getRemoteId(): string {
+        return $this->remoteId;
+    }
+
+    public function getLink(): string {
+        return $this->link;
+    }
+
+    public function setRemoteId(string $remoteId): void
+    {
+        $this->remoteId = $remoteId;
+    }
+
+    public function setLink(string $link): void
+    {
+        $this->link = $link;
     }
 }

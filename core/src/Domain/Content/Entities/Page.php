@@ -21,19 +21,17 @@ class Page
     private Carbon $updatedAt;
 
     public function __construct(
-        int $id,
         string $name,
-        ?string $title,
-        bool $external,
-        ?array $content,
-        ?string $alias,
-        ?string $position,
-        ?string $link,
-        bool $blank,
-        int $rank,
-        bool $active
+        ?string $title = null,
+        bool $external = false,
+        ?array $content = null,
+        ?string $alias = null,
+        ?string $position = null,
+        ?string $link = null,
+        bool $blank = false,
+        int $rank = 0,
+        bool $active = true
     ) {
-        $this->id = $id;
         $this->name = $name;
         $this->title = $title;
         $this->external = $external;
@@ -54,6 +52,7 @@ class Page
         $this->updatedAt = Carbon::now();
     }
 
+    // Активация страницы
     public function activate(): void
     {
         $this->active = true;
@@ -64,5 +63,26 @@ class Page
     {
         $this->active = false;
         $this->updatedAt = Carbon::now();
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function getFullLink(): ?string
+    {
+        return $this->link ?: ($this->alias ? '/'.$this->alias : null);
+    }
+
+    public function updateTitle(?string $newTitle): void
+    {
+        $this->title = $newTitle;
+        $this->updatedAt = Carbon::now();
+    }
+
+    public function isExternal(): bool
+    {
+        return $this->external;
     }
 }
